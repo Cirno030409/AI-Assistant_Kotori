@@ -10,7 +10,7 @@ ChatGPTを使った，Windows用のAIアシスタント「ことり」です．�
 
 ## 試しに使ってみる
 実行には，Pythonの環境が整っている必要があります．
-1. `pip install -r requirements.txt`を実行して，必要なライブラリをインストールします．
+1. `pip install -r requirements.txt`をターミナル上で実行して，必要なライブラリをインストールします．
 2. `run.bat`を実行します．
 
 
