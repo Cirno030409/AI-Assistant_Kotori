@@ -6,6 +6,8 @@ import datetime
 
 import json
 
+import pyautogui
+
 import simpleaudio
 import speech_recognition as sr
 from comtypes import CLSCTX_ALL
@@ -20,7 +22,7 @@ conversation_history = []
 
 wake_words = ["ことり", "小鳥", "コトリ", "kotori", "Kotori"]
 
-remember_conv_num = 50
+remember_conv_num = 10
 think_cnt_limit = 7
 
 wave_recog = simpleaudio.WaveObject.from_wave_file("resources/sounds/recognize.wav")
@@ -39,7 +41,7 @@ def main():
         # 音声認識
         print("prompt history num: ", len(conversation_history))
         # print("会話履歴: ", conversation_history)
-        print("今聞いています...")
+        print(">> 今聞いています...")
         text = voice_recognition(wake_words)
         wave_recog.play() # 音声認識が開始されたことを知らせる音声を再生
         for wake_word in wake_words:
@@ -83,6 +85,12 @@ def main():
                     print("[Error]: 速度の指定が不正です．")
             else:
                 spd = 1.2
+                
+            # プログラム一覧の取得
+            if -1 != (extract_point := response.find("[get_programs]")):
+                text = str(get_installed_programs())
+                think_flag = True
+                continue
             
             # クロール
             if -1 != (extract_point := response.find("[crawl_page:")):
@@ -93,12 +101,14 @@ def main():
                 print(f"[実行]: 指定したURLのWebページをクロールする: {url}")
                 text = crawl_page(url)
                 think_flag = True
+                continue
             
             # 現在日付時刻の取得
             if -1 != (extract_point := response.find("[get_time_now]")):
                 now = datetime.datetime.now()
                 text = f"現在の日時は{now.year}年{now.month}月{now.day}日{now.hour}時{now.minute}分です．"
                 think_flag = True
+                continue
             
             # 記憶
             if -1 != (extract_point := response.find("[preserve_info:")):
@@ -115,7 +125,7 @@ def main():
                     
             think_cnt += 1
             if think_cnt > think_cnt_limit:
-                text_to_voice("思考回数が10回を超えたため，返答できません．", 1.2)
+                text_to_voice(f"思考回数が{think_cnt_limit}回を超えたため，返答できません．", 1.2)
                 break
         
         # ChatGPTの応答を音声で出力
@@ -185,9 +195,11 @@ def operate_pc(sys_operate):
         elif sys_operate.find("run") != -1:
             path = sys_operate[sys_operate.find("(") + 1 : sys_operate.find(")")]
             print(f"[実行]: 指定したパスのプログラムを実行する: \"{path}\"")
-            if 0 != subprocess.run(f"\"{path}\"").returncode:
-                print("[Error]: 実行に失敗しました．")
-                text_to_voice("実行できませんでした．", 1.2)
+            subprocess.Popen(f"\"{path}\"")
+            
+        elif sys_operate.find("playpause") != -1:
+            pyautogui.press("playpause")
+            print("[実行]: メディアの再生の一時停止・再生を切り替える")
         else:
             print(f"[Error]: 不正なコマンドが実行されようとしました．コマンド: {sys_operate}")
             sys_operate = "None"
@@ -231,23 +243,23 @@ def get_installed_programs():
 def voice_recognition(wake_words=None):
     r = sr.Recognizer()
     text = ""
-    while True:
-        text = ""
-        with sr.Microphone(device_index=0) as source:
-            r.adjust_for_ambient_noise(source, duration=1)
+    with sr.Microphone(device_index=0) as source:
+        r.adjust_for_ambient_noise(source, duration=1)
+        while True:
+            text = ""
             audio = r.listen(source)
 
-        try:
-            text = r.recognize_google(audio, language="ja-JP")
-        except:
-            pass
-        if text != "":
-            print("heard: ", text)
-            if wake_words is not None:
-                for word in wake_words:
-                    if word in text:
-                        print("wake word detected")
-                        return text
+            try:
+                text = r.recognize_google(audio, language="ja-JP")
+            except:
+                pass
+            if text != "":
+                print("heard: ", text)
+                if wake_words is not None:
+                    for word in wake_words:
+                        if word in text:
+                            print("wake word detected")
+                            return text
 
 
 def set_charactor():
@@ -263,9 +275,6 @@ def set_charactor():
         cheet_sheet = f.read()
         
     prompt = prompt + """    
-    以下に，このパソコンにインストールされているプログラム一覧を示します．プログラムの実行が必要な場合は，以下のパスを使用してください．
-    """ + str(programs) + """
-    
     以下に，参考になる情報を示します．回答の際に使用してください．""" + cheet_sheet + """
     
         
@@ -288,8 +297,12 @@ def send_to_gpt(prompt):
     messages = conversation_history + [{"role": "user", "content": prompt}]
 
     # ChatGPTにリクエストを送信
-    response = client.chat.completions.create(model="gpt-3.5-turbo", messages=messages)
-
+    try:
+        response = client.chat.completions.create(model="gpt-3.5-turbo", messages=messages)
+    except Exception as e:
+        print("[Error]: ChatGPTへのリクエストに失敗しました．")
+        print(e)
+        return "ChatGPTへのリクエストにエラーが発生しました．"
     # 応答を取得
     response_text = response.choices[0].message.content
 

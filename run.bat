@@ -1,1 +1,0 @@
-python3 ai_assistant_main.py
