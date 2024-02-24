@@ -23,3 +23,4 @@ requests==2.31.0
 simpleaudio==1.0.4
 soupsieve==2.5
 SpeechRecognition==3.10.1
+PyAutoGUI==0.9.54

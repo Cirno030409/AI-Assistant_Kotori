@@ -172,7 +172,7 @@ def operate_pc(sys_operate):
             volume = interface.QueryInterface(IAudioEndpointVolume)
             volume.SetMute(0, None)  # Mute解除
             volume.SetMasterVolumeLevel(
-                volume.GetMasterVolumeLevel() + 2, None
+                volume.GetMasterVolumeLevel() + 3, None
             )  # MasterVolの設定
 
         elif sys_operate == "volume_down":
@@ -184,7 +184,7 @@ def operate_pc(sys_operate):
             volume = interface.QueryInterface(IAudioEndpointVolume)
             volume.SetMute(0, None)  # Mute解除
             volume.SetMasterVolumeLevel(
-                volume.GetMasterVolumeLevel() - 2, None
+                volume.GetMasterVolumeLevel() - 3, None
             )  # MasterVolの設定
             
         elif sys_operate.find("search") != -1:
@@ -195,7 +195,11 @@ def operate_pc(sys_operate):
         elif sys_operate.find("run") != -1:
             path = sys_operate[sys_operate.find("(") + 1 : sys_operate.find(")")]
             print(f"[実行]: 指定したパスのプログラムを実行する: \"{path}\"")
-            subprocess.Popen(f"\"{path}\"")
+            try:
+                subprocess.Popen(f"\"{path}\"")
+            except Exception as e:
+                text_to_voice("プログラムを実行できませんでした．", 1.2)
+                print(f"[Error]: 実行できませんでした．エラー: {e}")
             
         elif sys_operate.find("playpause") != -1:
             pyautogui.press("playpause")
