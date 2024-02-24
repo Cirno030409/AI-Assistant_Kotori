@@ -32,7 +32,8 @@ def main():
     earthquake_thread.start()
     
     set_charactor()
-    print("[Welcome to ことり AI Assistant]")
+    print("[Welcome to AI Assistant ことり]")
+    print("「ことり，〇〇して」のように話しかけてください．")
     while True:
 
         # 音声認識
@@ -280,7 +281,7 @@ def set_charactor():
 def send_to_gpt(prompt):
     client = OpenAI(
         # This is the default and can be omitted
-        api_key="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",
+        api_key="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",
     )
 
     # 会話の履歴を含めてメッセージを構築
